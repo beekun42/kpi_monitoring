@@ -71,69 +71,13 @@ function nodeData(
   }
 }
 
-/** .kpi-node 想定の幅・高さ（overview の重なり解消のみに使用） */
-const LAYOUT_NODE_W = 216
+/** .kpi-node 想定の高さ（同階層コホートの縦積み間隔に使用） */
 const LAYOUT_NODE_H = 118
 const LAYOUT_PAD = 10
 /** ドライバー横方向の列幅（Seller ツリーの深さごと） */
 const DRIVER_COL_W = 300
 /** 同階層コホート（NewR13 等）の縦積み間隔 */
 const COHORT_STACK_DY = LAYOUT_NODE_H + LAYOUT_PAD
-
-function resolveNodeOverlaps(nodes: Node<KpiNodeData, 'kpi'>[]): Node<KpiNodeData, 'kpi'>[] {
-  if (nodes.length <= 1) return nodes
-  const placed: Array<{ x: number; y: number; x2: number; y2: number }> = []
-  const overlaps = (x: number, y: number) => {
-    const xr = x + LAYOUT_NODE_W
-    const yb = y + LAYOUT_NODE_H
-    return placed.some(
-      (b) =>
-        !(
-          xr + LAYOUT_PAD <= b.x ||
-          x >= b.x2 + LAYOUT_PAD ||
-          yb + LAYOUT_PAD <= b.y ||
-          y >= b.y2 + LAYOUT_PAD
-        ),
-    )
-  }
-  const sorted = [...nodes].sort(
-    (a, b) => a.position.y - b.position.y || a.position.x - b.position.x,
-  )
-  const posById = new Map<string, { x: number; y: number }>()
-  for (const n of sorted) {
-    let { x, y } = n.position
-    let guard = 0
-    while (overlaps(x, y) && guard++ < 120) {
-      y += 28
-    }
-    placed.push({ x, y, x2: x + LAYOUT_NODE_W, y2: y + LAYOUT_NODE_H })
-    posById.set(n.id, { x, y })
-  }
-  return nodes.map((n) => ({
-    ...n,
-    position: posById.get(n.id) ?? n.position,
-  }))
-}
-
-export function buildOverviewNodes(
-  monthData: Record<string, Record<string, KpiValues>> | undefined,
-): { nodes: Node<KpiNodeData, 'kpi'>[]; edges: Edge[] } {
-  const ttl = monthData?.ttl
-  const nodes: Node<KpiNodeData, 'kpi'>[] = []
-  const edges: Edge[] = []
-  const root = vals(ttl, 'gms_ttl')
-  const hg = vals(ttl, 'high_gms')
-  const lg = vals(ttl, 'low_gms')
-  const d0 = nodeData('gms_ttl', 'ttl', root)
-  const d1 = nodeData('high_gms', 'ttl', hg)
-  const d2 = nodeData('low_gms', 'ttl', lg)
-  if (d0) nodes.push({ id: 'ttl-gms_ttl', type: 'kpi', position: { x: 0, y: 180 }, data: d0 })
-  if (d1) nodes.push({ id: 'ttl-high_gms', type: 'kpi', position: { x: 320, y: 60 }, data: d1 })
-  if (d2) nodes.push({ id: 'ttl-low_gms', type: 'kpi', position: { x: 320, y: 300 }, data: d2 })
-  if (d0 && d1) edges.push({ id: 'e-h', source: 'ttl-gms_ttl', target: 'ttl-high_gms' })
-  if (d0 && d2) edges.push({ id: 'e-l', source: 'ttl-gms_ttl', target: 'ttl-low_gms' })
-  return { nodes: resolveNodeOverlaps(nodes), edges }
-}
 
 export function buildDriverNodes(
   scopeKey: 'high' | 'low' | 'ttl_nodup',

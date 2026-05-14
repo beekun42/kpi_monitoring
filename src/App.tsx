@@ -19,13 +19,12 @@ import { KpiNode } from './components/KpiNode'
 import {
   buildDriverNodes,
   buildExpandedDriverNodes,
-  buildOverviewNodes,
   type KpiNodeData,
 } from './kpi/buildGraph'
 import { titleFor } from './kpi/labels'
 import { KpiDrillProvider } from './kpi/KpiDrillContext'
 import { parseKpiFlowNodeId, seriesActualForMetric } from './kpi/nodeSeries'
-import type { DriverLayout, KpiPayload, LaneFilter, TreeMode } from './kpi/types'
+import type { DriverLayout, KpiPayload, LaneFilter } from './kpi/types'
 
 const nodeTypes = { kpi: KpiNode }
 
@@ -47,7 +46,6 @@ export default function App() {
   const [payload, setPayload] = useState<KpiPayload | null>(null)
   const [actions, setActions] = useState<ActionRow[]>([])
   const [month, setMonth] = useState<string>('')
-  const [treeMode, setTreeMode] = useState<TreeMode>('drivers')
   const [driverScope, setDriverScope] = useState<'high' | 'low' | 'ttl_nodup'>('high')
   const [lane, setLane] = useState<LaneFilter>('buyer')
   const [driverLayout, setDriverLayout] = useState<DriverLayout>('drill')
@@ -79,7 +77,7 @@ export default function App() {
     setExpandedMetrics([])
     setCollapsedMetrics([])
     setSidePanelNodeId(null)
-  }, [month, driverScope, lane, driverLayout, treeMode])
+  }, [month, driverScope, lane, driverLayout])
 
   const monthBundle = payload?.metrics[month]
 
@@ -87,12 +85,6 @@ export default function App() {
     if (!monthBundle) {
       setNodes([])
       setEdges([])
-      return
-    }
-    if (treeMode === 'overview') {
-      const { nodes: n, edges: e } = buildOverviewNodes(monthBundle)
-      setNodes(n)
-      setEdges(e)
       return
     }
     if (driverLayout === 'full') {
@@ -112,7 +104,6 @@ export default function App() {
     setEdges(e)
   }, [
     monthBundle,
-    treeMode,
     driverScope,
     lane,
     driverLayout,
@@ -134,7 +125,6 @@ export default function App() {
   }, [
     sidePanelNodeId,
     monthBundle,
-    treeMode,
     driverScope,
     lane,
     driverLayout,
@@ -188,49 +178,35 @@ export default function App() {
             </select>
           </label>
           <label className="field">
-            <span>ツリー</span>
+            <span>スコープ</span>
             <select
-              value={treeMode}
-              onChange={(e) => setTreeMode(e.target.value as TreeMode)}
+              value={driverScope}
+              onChange={(e) =>
+                setDriverScope(e.target.value as typeof driverScope)
+              }
             >
-              <option value="overview">High / Low 分解（TTL）</option>
-              <option value="drivers">ドライバ分解</option>
+              <option value="high">High</option>
+              <option value="low">Low</option>
+              <option value="ttl_nodup">TTL（重複なし）</option>
             </select>
           </label>
-          {treeMode === 'drivers' ? (
-            <>
-              <label className="field">
-                <span>スコープ</span>
-                <select
-                  value={driverScope}
-                  onChange={(e) =>
-                    setDriverScope(e.target.value as typeof driverScope)
-                  }
-                >
-                  <option value="high">High</option>
-                  <option value="low">Low</option>
-                  <option value="ttl_nodup">TTL（重複なし）</option>
-                </select>
-              </label>
-              <label className="field">
-                <span>レーン</span>
-                <select value={lane} onChange={(e) => setLane(e.target.value as LaneFilter)}>
-                  <option value="buyer">Buyer</option>
-                  <option value="seller">Seller</option>
-                </select>
-              </label>
-              <label className="field">
-                <span>表示</span>
-                <select
-                  value={driverLayout}
-                  onChange={(e) => setDriverLayout(e.target.value as DriverLayout)}
-                >
-                  <option value="drill">累積展開（クリックで下位を追加）</option>
-                  <option value="full">全体ツリー</option>
-                </select>
-              </label>
-            </>
-          ) : null}
+          <label className="field">
+            <span>レーン</span>
+            <select value={lane} onChange={(e) => setLane(e.target.value as LaneFilter)}>
+              <option value="buyer">Buyer</option>
+              <option value="seller">Seller</option>
+            </select>
+          </label>
+          <label className="field">
+            <span>表示</span>
+            <select
+              value={driverLayout}
+              onChange={(e) => setDriverLayout(e.target.value as DriverLayout)}
+            >
+              <option value="drill">累積展開（クリックで下位を追加）</option>
+              <option value="full">全体ツリー</option>
+            </select>
+          </label>
         </div>
       </header>
 
@@ -239,7 +215,7 @@ export default function App() {
         Luxury は初版では非表示です。
       </div>
 
-      {treeMode === 'drivers' && driverLayout === 'drill' ? (
+      {driverLayout === 'drill' ? (
         <>
           <div className="breadcrumb">
             <button

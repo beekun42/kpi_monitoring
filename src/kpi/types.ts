@@ -15,7 +15,5 @@ export type KpiPayload = {
 
 export type LaneFilter = 'buyer' | 'seller'
 
-export type TreeMode = 'overview' | 'drivers'
-
 /** ドライバ分解のレイアウト */
 export type DriverLayout = 'drill' | 'full'

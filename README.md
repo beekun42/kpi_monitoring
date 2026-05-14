@@ -10,6 +10,12 @@ Excel 由来の KPI を `public/data/kpi-from-excel.json` から読み込み、R
 
 以前 Cursor の Temp 配下にあったコピーは捨てて構いません。今後の編集・Git・デプロイはすべてここで行う想定です。
 
+### 更新の反映（GitHub を正とする）
+
+コードや `public/data/*.json` の変更は、**この PC で編集 → `git commit` → `git push` で GitHub の `main` に載せる**運用にします。Vercel と連携済みなら、`main` への push がトリガーで本番 URL も更新されます。
+
+GitHub の Web 上だけで編集する必要はありません（ローカル＋push が分かりやすく、履歴も残りやすいです）。小さな修正をブラウザから直すこともできますが、通常の開発はローカル推奨です。
+
 ## ローカル
 
 ```bash

@@ -2,9 +2,18 @@
 
 Excel 由来の KPI を `public/data/kpi-from-excel.json` から読み込み、React Flow で可視化するフロントのみのダッシュボードです。
 
+## プロジェクトの場所（固定パス）
+
+開発は次のフォルダを正とします（Cursor では **File → Open Folder** でこのフォルダを開いてください）。
+
+`C:\Users\yosuke.akagi\kpi-dashboard`
+
+以前 Cursor の Temp 配下にあったコピーは捨てて構いません。今後の編集・Git・デプロイはすべてここで行う想定です。
+
 ## ローカル
 
 ```bash
+cd C:\Users\yosuke.akagi\kpi-dashboard
 npm install
 npm run dev
 ```
@@ -15,28 +24,94 @@ npm run dev
 npm run export-kpi
 ```
 
-## 他の人に URL で見せる（GitHub + Vercel）
+---
 
-手元の `mountaineering` プロジェクトと同様に、**GitHub に push → Vercel でそのリポジトリを import** すれば公開 URL が発行されます。
+## GitHub に載せる（手順を細かく）
 
-1. **GitHub** に空のリポジトリを作り、このフォルダを push する（`node_modules` は含めない）。
-2. [Vercel](https://vercel.com/) にログインし、「Add New… → Project」でそのリポジトリを選ぶ。
-3. **Root Directory** がリポジトリ直下でこのアプリだけならそのまま。モノレポの場合は `kpi-dashboard` を Root に指定する。
-4. Framework は自動で **Vite** と認識されることが多い。手動なら **Build Command** `npm run build`、**Output Directory** `dist`（リポジトリに `vercel.json` があるので通常はそのまま）。
-5. Deploy 後に表示される `https://….vercel.app` を共有する。
+前提: PC に [Git for Windows](https://git-scm.com/download/win) が入っていて、ターミナルで `git --version` が通ること。
 
-プレビュー用に CLI を使う場合:
+### 1. GitHub 側で空のリポジトリを作る
+
+1. ブラウザで [https://github.com](https://github.com) にログインする。
+2. 右上の **+** → **New repository** を選ぶ。
+3. **Repository name** に例: `kpi-dashboard` を入力する。
+4. **Public** か **Private** を選ぶ（社外秘の数値を JSON に含むなら **Private** を推奨）。
+5. **Add a README** など「初期ファイルを付ける」チェックは**すべてオフ**にする（ローカルに既にコードがあるため）。
+6. **Create repository** を押す。
+
+### 2. ローカルでリモートを登録して push する
+
+このフォルダにはすでに `git init` と初回コミットが入っています。GitHub の作成直後に表示される画面の **「…or push an existing repository from the command line」** に近い流れで進めます。
+
+PowerShell またはターミナルで:
+
+```powershell
+cd C:\Users\yosuke.akagi\kpi-dashboard
+git remote add origin https://github.com/<あなたのユーザー名>/<リポジトリ名>.git
+git push -u origin main
+```
+
+`<あなたのユーザー名>` と `<リポジトリ名>` は、手順 1 で作ったリポジトリの URL に合わせて書き換えてください。
+
+- **すでに `git remote add origin` を実行済み**でエラーになる場合は、一度 `git remote remove origin` してから、もう一度 `git remote add origin ...` を実行してください。
+- `git push` で認証を求められたら、GitHub の案内に従います。HTTPS の場合は **Personal Access Token**（classic で `repo` 権限）をパスワードの代わりに使うことが多いです。GitHub CLI や **Git Credential Manager** を使う方法もあります。
+
+push が成功すると、GitHub のリポジトリページにソースコードが表示されます。
+
+### 3. 以降の日常作業
+
+コードを変えたあと:
+
+```powershell
+cd C:\Users\yosuke.akagi\kpi-dashboard
+git add -A
+git status
+git commit -m "変更内容が分かる日本語や英語の一言"
+git push
+```
+
+---
+
+## Vercel で公開する（手順を細かく）
+
+このアプリは **Neon 不要**の静的サイトです。`vercel.json` で `npm run build` と出力先 `dist` を指定済みです。
+
+### 1. Vercel にログインする
+
+1. [https://vercel.com](https://vercel.com) を開く。
+2. **Sign Up** または **Log In** で **GitHub アカウントと連携**してログインする（GitHub のリポジトリ一覧を読むため）。
+
+### 2. プロジェクトを新規作成する
+
+1. ダッシュボードで **Add New…** → **Project**（または **Import Project**）。
+2. **Import Git Repository** の一覧から、先ほど push した **`kpi-dashboard`（リポジトリ名は環境による）** を選ぶ。見つからない場合は **Adjust GitHub App Permissions** でリポジトリへのアクセスを追加する。
+3. **Framework Preset** が **Vite** と出ていればそのまま。**Build Command** が `npm run build`、**Output Directory** が `dist` になっているか確認する（`vercel.json` があるので通常は自動で合う）。
+4. **Environment Variables** は空のままでよい（この MVP に必須の変数はない）。
+5. **Deploy** を押す。
+
+### 3. 公開 URL を確認する
+
+ビルドが成功すると **Congratulations** のような画面に **Visit** や本番 URL（例: `https://kpi-dashboard-xxx.vercel.app`）が表示されます。その URL を共有すると、他の人もブラウザから同じ画面を見られます。
+
+### 4. 以降の自動デプロイ
+
+GitHub の **main** ブランチに `git push` するたびに、Vercel が自動で再ビルド・本番反映することが多いです（連携時のデフォルト設定のままの場合）。
+
+### 5. CLI で試す（任意）
 
 ```bash
+cd C:\Users\yosuke.akagi\kpi-dashboard
 npx vercel
 ```
 
+ブラウザでログインを求められたら従い、プレビュー用 URL が発行されます。
+
+---
+
 ### Neon について
 
-登山アプリのように **サーバー＋Postgres** が要る構成ではありません。現状はビルド時に `public/data/` の JSON が `dist/` にコピーされ、静的ファイルとして配信されます。
-
-将来、**認証付き API で KPI を配信**したくなったときに Neon 等の DB とサーバーレス関数を足す、という形が自然です。
+手元の `mountaineering` のように **サーバー＋Postgres** が要る構成ではありません。ビルド時に `public/data/` の JSON が `dist/` にコピーされ、静的ファイルとして配信されます。将来、認証付き API で KPI を配信したくなったときに Neon 等を足す、という形が自然です。
 
 ### 注意（機密データ）
 
-`public/data/kpi-from-excel.json` を **パブリック GitHub + Vercel** に載せると、URL を知っている人なら誰でも取得できます。社外秘の数値の場合は **非公開リポジトリ**にするか、Vercel の [Deployment Protection](https://vercel.com/docs/security/deployment-protection) や別の認証レイヤーを検討してください。
+`public/data/kpi-from-excel.json` を **パブリック GitHub + Vercel** に載せると、URL を知っている人なら誰でも JSON を取得できます。社外秘の数値の場合は **非公開リポジトリ**にするか、Vercel の [Deployment Protection](https://vercel.com/docs/security/deployment-protection) や別の認証レイヤーを検討してください。

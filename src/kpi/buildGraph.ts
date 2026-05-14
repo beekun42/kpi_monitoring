@@ -95,17 +95,15 @@ export function buildDriverNodes(
   const showBuyer = lane !== 'seller'
   const showSeller = lane !== 'buyer'
 
-  let gmsPos = { x: 40, y: 320 }
+  const gmsPos = { x: 40, y: 320 }
   let buyerColX = 360
   let cohortColX = 680
   let sellerColX = 360
 
   if (showBuyer) {
-    gmsPos = { x: 40, y: 320 }
     buyerColX = 360
     cohortColX = 680
   } else {
-    gmsPos = { x: 40, y: 320 }
     sellerColX = 360
   }
 

@@ -166,47 +166,54 @@ export default function App() {
           <strong>GMS KPI</strong>
           <span className="muted small">MVP（Excel Fcst＋デモのAct/Tgt）</span>
         </div>
-        <div className="toolbar">
-          <label className="field">
-            <span>月</span>
-            <select value={month} onChange={(e) => setMonth(e.target.value)}>
-              {(payload?.months ?? []).map((m) => (
-                <option key={m} value={m}>
-                  {m}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="field">
-            <span>スコープ</span>
-            <select
-              value={driverScope}
-              onChange={(e) =>
-                setDriverScope(e.target.value as typeof driverScope)
-              }
-            >
-              <option value="high">High</option>
-              <option value="low">Low</option>
-              <option value="ttl_nodup">TTL（重複なし）</option>
-            </select>
-          </label>
-          <label className="field">
-            <span>レーン</span>
-            <select value={lane} onChange={(e) => setLane(e.target.value as LaneFilter)}>
-              <option value="buyer">Buyer</option>
-              <option value="seller">Seller</option>
-            </select>
-          </label>
-          <label className="field">
-            <span>表示</span>
-            <select
-              value={driverLayout}
-              onChange={(e) => setDriverLayout(e.target.value as DriverLayout)}
-            >
-              <option value="drill">累積展開（クリックで下位を追加）</option>
-              <option value="full">全体ツリー</option>
-            </select>
-          </label>
+        <div className="topbar__actions">
+          <div className="toolbar">
+            <label className="field">
+              <span>月</span>
+              <select value={month} onChange={(e) => setMonth(e.target.value)}>
+                {(payload?.months ?? []).map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>スコープ</span>
+              <select
+                value={driverScope}
+                onChange={(e) =>
+                  setDriverScope(e.target.value as typeof driverScope)
+                }
+              >
+                <option value="high">High</option>
+                <option value="low">Low</option>
+                <option value="ttl_nodup">TTL（重複なし）</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>レーン</span>
+              <select value={lane} onChange={(e) => setLane(e.target.value as LaneFilter)}>
+                <option value="buyer">Buyer</option>
+                <option value="seller">Seller</option>
+              </select>
+            </label>
+            <label className="field">
+              <span>表示</span>
+              <select
+                value={driverLayout}
+                onChange={(e) => setDriverLayout(e.target.value as DriverLayout)}
+              >
+                <option value="drill">累積展開（クリックで下位を追加）</option>
+                <option value="full">全体ツリー</option>
+              </select>
+            </label>
+          </div>
+          {__AUTH_ENABLED__ ? (
+            <a className="topbar__logout muted small" href="/api/logout">
+              ログアウト
+            </a>
+          ) : null}
         </div>
       </header>
 

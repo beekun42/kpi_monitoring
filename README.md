@@ -95,7 +95,7 @@ git push
 1. ダッシュボードで **Add New…** → **Project**（または **Import Project**）。
 2. **Import Git Repository** の一覧から、先ほど push した **`kpi-dashboard`（リポジトリ名は環境による）** を選ぶ。見つからない場合は **Adjust GitHub App Permissions** でリポジトリへのアクセスを追加する。
 3. **Framework Preset** が **Vite** と出ていればそのまま。**Build Command** が `npm run build`、**Output Directory** が `dist` になっているか確認する（`vercel.json` があるので通常は自動で合う）。
-4. **Environment Variables** は空のままでよい（この MVP に必須の変数はない）。
+4. **Environment Variables** は、パスワード不要なら空のままでよい。パスワード保護を使う場合は後述の **`SITE_PASSWORD`** を追加する。
 5. **Deploy** を押す。
 
 ### 3. 公開 URL を確認する
@@ -117,10 +117,38 @@ npx vercel
 
 ---
 
+## パスワード保護（`SITE_PASSWORD`）
+
+Vercel の **Routing Middleware** と **Edge Function**（`/api/login`・`/api/logout`）で、共有用 URL に簡易的なパスワード壁をかけられます。
+
+### 挙動
+
+- Vercel の **Environment Variables** に **`SITE_PASSWORD`** を設定すると有効になります（値はサイト用のパスワード。英数字＋記号の長めを推奨）。
+- 未設定のときは従来どおり **誰でもアクセス可能**です。
+- 有効時は、未ログインのブラウザは **`/login.html`** に誘導されます。正しいパスワードでログインすると **HttpOnly Cookie**（約 7 日）が付き、`/`・`/data/*`・`/assets/*` などへアクセスできます。
+- アプリ上部に **「ログアウト」** が出ます（`SITE_PASSWORD` を **ビルド時**に読める必要があるため、Vercel では変数のスコープで **Production / Preview の Build** にも含めてください）。
+
+### ローカル（`npm run dev`）について
+
+Vite の開発サーバでは **Vercel の middleware は動きません**（ローカルでは URL を知っていればガードなし）。パスワード付きの挙動を PC で試すには:
+
+```bash
+npx vercel dev
+```
+
+`.env.local` に `SITE_PASSWORD=...` を書くと、`vercel dev` および Vite ビルド時の「ログアウト表示」に使えます。テンプレートは `.env.example` を参照してください。
+
+### 注意
+
+- パスワードは **サーバー側の環境変数**のみに置き、リポジトリにコミットしないでください。
+- Cookie 署名にも同じ秘密を使っているため、**`SITE_PASSWORD` を変えると既存のログインセッションは無効**になります。
+
+---
+
 ### Neon について
 
 手元の `mountaineering` のように **サーバー＋Postgres** が要る構成ではありません。ビルド時に `public/data/` の JSON が `dist/` にコピーされ、静的ファイルとして配信されます。将来、認証付き API で KPI を配信したくなったときに Neon 等を足す、という形が自然です。
 
 ### 注意（機密データ）
 
-`public/data/kpi-from-excel.json` を **パブリック GitHub + Vercel** に載せると、URL を知っている人なら誰でも JSON を取得できます。社外秘の数値の場合は **非公開リポジトリ**にするか、Vercel の [Deployment Protection](https://vercel.com/docs/security/deployment-protection) や別の認証レイヤーを検討してください。
+`public/data/kpi-from-excel.json` を **パブリック GitHub + Vercel** に載せると、URL を知っている人なら誰でも JSON を取得できます。社外秘の数値の場合は **非公開リポジトリ**にするか、Vercel の [Deployment Protection](https://vercel.com/docs/security/deployment-protection) や別の認証レイヤーを検討してください。本リポジトリの **`SITE_PASSWORD`** は「未ログインからのぞき見」を防ぐ簡易壁であり、**ログイン済みユーザーは引き続き JSON を取得できます**。

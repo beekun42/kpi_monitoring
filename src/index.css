@@ -79,6 +79,24 @@ code {
   gap: 2px;
 }
 
+.topbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.topbar__logout {
+  text-decoration: none;
+  color: var(--accent);
+  white-space: nowrap;
+  padding: 2px 0;
+}
+
+.topbar__logout:hover {
+  text-decoration: underline;
+}
+
 .toolbar {
   display: flex;
   flex-wrap: wrap;

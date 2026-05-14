@@ -1,0 +1,17 @@
+[
+  {
+    "nodeId": "high-buyer.spending",
+    "owner": "（例）Buyer KPI Owner",
+    "text": "[Try] 単価帯別の訴求ABテストでSpending効率改善を試行中"
+  },
+  {
+    "nodeId": "high-seller.soldout_rate",
+    "owner": "（例）Supply Owner",
+    "text": "[Plan] 出品後48h以内の価格見直しリマインドを5/25から試す予定"
+  },
+  {
+    "nodeId": "ttl-gms_ttl",
+    "owner": "（例）Planning",
+    "text": "[Watch] High/Low分解は単価1万円境界。TTLのUUはHigh+Lowの合算と一致しません（重複購買）"
+  }
+]

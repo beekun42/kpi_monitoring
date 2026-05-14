@@ -1,14 +1,21 @@
 """
-KPI JSON の数値を「指標ごと」の乱数倍率で一括スクランブルする（デモ・公開用）。
+KPI JSON をデモ・公開向けにスクランブルする。
 
-- 各 (scope, metric_id) に対して actual / forecast / target を「同じ倍率」で乗算する
-  （全月で同じ倍率。TvF=F−T や TvA=A−T のスケールは保たれる）。
-- 既定の倍率は [0.5, 2.0] の一様乱数（--min / --max で変更可）。
-- --in-place のときは既定で .orig バックアップを作成する（--no-backup で無効）。
+1) 指標ごとの乱数倍率（任意）
+   - 各 (scope, metric_id) で actual / forecast / target を同じ倍率で全月に掛算
+     （TvF=F−T 等の関係はスケール上保たれる）。
+   - 既定倍率レンジ [0.5, 2.0]（--min / --max）。
+
+2) 月次バンドルのランダム割当（既定 ON）
+   - `metrics["2026-07"]` など「1か月分の全スコープ・全指標の塊」を、別の月の塊と入れ替える。
+   - 同じ月キー内の指標間の整合はそのまま。スパークライン上の「時系列の傾向」は読めなくなる。
+
+--in-place 時は既定で .orig バックアップ（--no-backup で無効）。
 
 使用例:
   python scripts/obfuscate_kpi_json.py public/data/kpi-from-excel.json --in-place
-  python scripts/obfuscate_kpi_json.py public/data/kpi-from-excel.json -o out.json --seed 12345
+  python scripts/obfuscate_kpi_json.py public/data/kpi-from-excel.json --in-place --skip-multiply
+  python scripts/obfuscate_kpi_json.py public/data/kpi-from-excel.json -o out.json --seed 1 --shuffle-seed 2
 """
 
 from __future__ import annotations
@@ -74,20 +81,46 @@ def apply_multipliers(
                         node[field] = x
 
 
+def shuffle_month_bundles(metrics: dict[str, Any], months: list[str], seed_shuffle: int | None) -> None:
+    """各月キーに紐づくオブジェクト全体を、別月のオブジェクトと入れ替える（深いコピー）。"""
+    smonths = [str(m) for m in months]
+    bundles = [json.loads(json.dumps(metrics[m])) for m in smonths]
+    n = len(smonths)
+    if n <= 1:
+        return
+    perm = list(range(n))
+    rnd = random.Random(seed_shuffle)
+    rnd.shuffle(perm)
+    for i, m in enumerate(smonths):
+        metrics[m] = bundles[perm[i]]
+
+
 def main() -> int:
-    p = argparse.ArgumentParser(description="Obfuscate KPI JSON with per-metric random multipliers.")
+    p = argparse.ArgumentParser(description="Obfuscate KPI JSON (multipliers + month-bundle shuffle).")
     p.add_argument("input", type=Path, help="Input kpi-from-excel.json path")
     p.add_argument("-o", "--output", type=Path, help="Output path (default: stdout as JSON)")
     p.add_argument("--in-place", action="store_true", help="Overwrite input file")
     p.add_argument("--no-backup", action="store_true", help="With --in-place, skip .orig backup")
-    p.add_argument("--seed", type=int, default=None, help="RNG seed (omit for non-deterministic)")
+    p.add_argument("--seed", type=int, default=None, help="RNG seed for multipliers (omit for random)")
+    p.add_argument(
+        "--shuffle-seed",
+        type=int,
+        default=None,
+        help="RNG seed for month-bundle shuffle (default: seed+1 if --seed set, else random)",
+    )
+    p.add_argument("--skip-multiply", action="store_true", help="Skip per-metric multiplier step")
+    p.add_argument(
+        "--skip-shuffle-months",
+        action="store_true",
+        help="Skip month-bundle shuffle (keeps real time-series shape)",
+    )
     p.add_argument("--min", dest="min_m", type=float, default=0.5, help="Min multiplier (default 0.5)")
     p.add_argument("--max", dest="max_m", type=float, default=2.0, help="Max multiplier (default 2.0)")
     p.add_argument(
         "--decimals",
         type=int,
         default=10,
-        help="Round values to this many decimal places (omit with negative to skip rounding)",
+        help="Round values to this many decimal places (negative to skip rounding)",
     )
     args = p.parse_args()
 
@@ -108,14 +141,31 @@ def main() -> int:
         print("Invalid JSON: expected months[] and metrics{}", file=sys.stderr)
         return 1
 
-    keys = collect_metric_keys(metrics, [str(m) for m in months])
+    smonths = [str(m) for m in months]
+    keys = collect_metric_keys(metrics, smonths)
     if not keys:
         print("No metric keys found.", file=sys.stderr)
         return 1
 
-    multipliers = assign_multipliers(keys, args.min_m, args.max_m, args.seed)
-    dec = args.decimals if args.decimals >= 0 else None
-    apply_multipliers(metrics, [str(m) for m in months], multipliers, dec)
+    if not args.skip_multiply:
+        multipliers = assign_multipliers(keys, args.min_m, args.max_m, args.seed)
+        dec = args.decimals if args.decimals >= 0 else None
+        apply_multipliers(metrics, smonths, multipliers, dec)
+        print(f"Multipliers applied: {len(keys)} metrics (seed={args.seed!r})", file=sys.stderr)
+    else:
+        print("Skipped: per-metric multipliers", file=sys.stderr)
+
+    if not args.skip_shuffle_months:
+        shuffle_seed = args.shuffle_seed
+        if shuffle_seed is None:
+            if args.seed is not None:
+                shuffle_seed = args.seed + 100_003
+            else:
+                shuffle_seed = random.randrange(2**31)
+        shuffle_month_bundles(metrics, smonths, shuffle_seed)
+        print(f"Month bundles shuffled (shuffle_seed={shuffle_seed!r})", file=sys.stderr)
+    else:
+        print("Skipped: month-bundle shuffle", file=sys.stderr)
 
     out_text = json.dumps(data, ensure_ascii=False, indent=2) + "\n"
 
@@ -133,7 +183,6 @@ def main() -> int:
     else:
         sys.stdout.write(out_text)
 
-    print(f"Metrics obfuscated: {len(keys)} (seed={args.seed!r})", file=sys.stderr)
     return 0
 
 

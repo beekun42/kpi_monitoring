@@ -30,6 +30,20 @@ npm run dev
 npm run export-kpi
 ```
 
+### 数値のスクランブル（公開・デモ用）
+
+`public/data/kpi-from-excel.json` の **actual / forecast / target** を、**指標（スコープ＋ metric ID）ごとに同じ乱数倍率**で乗算します（**全月で同じ倍率**なので、月次の形やギャップのスケール感は保ちやすいです）。
+
+```bash
+npm run obfuscate-kpi
+```
+
+- 既定では入力ファイルと同じ場所に上書きし、直前の内容は **`kpi-from-excel.json.orig`** にコピーします（`.gitignore` でリポジトリに含めません。必要なら手元で保管）。
+- 倍率の範囲は `--min` / `--max`（スクリプト引数）で変更できます。
+- 再現したいときは `--seed 整数` を付けます。付けないと毎回別の倍率になります。
+
+本番の正しい数値が必要なときは、Excel から `npm run export-kpi` で再生成するか、`.orig` から戻してください。
+
 ---
 
 ## GitHub に載せる（手順を細かく）

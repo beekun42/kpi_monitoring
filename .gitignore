@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# KPI スクランブル前のバックアップ（平文に近いため push しない）
+public/data/*.json.orig
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

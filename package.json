@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "export-kpi": "python scripts/export_sample_from_excel.py",
+    "obfuscate-kpi": "python scripts/obfuscate_kpi_json.py public/data/kpi-from-excel.json --in-place",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
